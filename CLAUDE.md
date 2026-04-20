@@ -1,6 +1,6 @@
 # [프로젝트명] — Claude Code Instructions
 
-> **이 파일은 `claude-workflow-skills` 기반 템플릿입니다.**
+> **이 파일은 `claude-common-workflow` 기반 템플릿입니다.**
 > 새 프로젝트 셋업 시 이 파일을 복사 후 `<!-- TODO -->` 항목을 채워 사용하세요.
 
 ---
@@ -18,7 +18,7 @@
 ```
 [workspace]/                   <!-- TODO: 워크스페이스 구조 작성 -->
 ├── CLAUDE.md
-├── skills/                    ← 프로젝트 전용 스킬
+├── skills/                    ← 프로젝트 전용 스킬 (Jira, 환경 등)
 └── [서브프로젝트]/             ← 독립 git repo
 ```
 
@@ -26,7 +26,7 @@
 
 ## 워크플로우 (IMPORTANT — 반드시 순서대로 수행)
 
-> `0a 브레인스토밍` → `0b 플랜 작성` → `0c Jira 티켓 생성` → `1 워크트리 셋업` → `2 코드 작성` → `3 단위 테스트` → `4 정적 검증` → `5 통합 테스트` → `6 커밋/푸시/PR` → `7 정책서 작성/갱신` → `8 워크트리 정리`
+> `1 워크트리 셋업` → `0a 브레인스토밍` → `0b 플랜 작성` → `0c Jira 티켓 생성` → `2 코드 작성` → `3 단위 테스트` → `4 정적 검증` → `5 통합 테스트` → `6 커밋/푸시/PR` → `7 정책서 작성/갱신` → `8 워크트리 정리`
 
 - YOU MUST follow the step sequence strictly. 건너뛰기·순서 변경·자의적 생략 금지. step 전환 시 번호를 명시.
 - step 5 실패 시 → step 2로 돌아가 2→3→4→5 반복. **실패 상태에서 step 6 진입 금지.**
@@ -60,16 +60,16 @@
 
 ## 스킬 카탈로그
 
-> `claude-workflow-skills`가 `../claude-workflow-skills/`에 clone되어 있어야 합니다.
-> 없으면: `git clone https://github.com/KuruBehind/claude-workflow-skills ../claude-workflow-skills`
+> `claude-common-workflow`가 `../claude-common-workflow/`에 clone되어 있어야 합니다.
+> 없으면: `git clone https://github.com/KuruBehind/claude-common-workflow ../claude-common-workflow`
 
-### 공통 워크플로우 스킬 (`../claude-workflow-skills/`)
+### 공통 워크플로우 스킬 (`../claude-common-workflow/skills/`)
 
-- **[워크플로우]** `../claude-workflow-skills/workflow/SKILL.md` — step 인덱스 및 실행 절차
-- **[브레인스토밍]** `../claude-workflow-skills/brainstorming/SKILL.md` — Step 0a
-- **[플랜 작성]** `../claude-workflow-skills/writing-plans/SKILL.md` — Step 0b
-- **[서브에이전트]** `../claude-workflow-skills/subagent-dev/SKILL.md` — Step 2
-- **[정책서 작성]** `../claude-workflow-skills/writing-policy/SKILL.md` — Step 7
+- **[워크플로우]** `../claude-common-workflow/skills/workflow/SKILL.md` — step 인덱스 및 실행 절차
+- **[브레인스토밍]** `../claude-common-workflow/skills/brainstorming/SKILL.md` — Step 0a
+- **[플랜 작성]** `../claude-common-workflow/skills/writing-plans/SKILL.md` — Step 0b
+- **[서브에이전트]** `../claude-common-workflow/skills/subagent-dev/SKILL.md` — Step 2
+- **[정책서 작성]** `../claude-common-workflow/skills/writing-policy/SKILL.md` — Step 7
 
 ### 프로젝트 전용 스킬 (`skills/`)
 
