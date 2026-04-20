@@ -53,6 +53,10 @@ my-workspace/
     └── workflow-env/SKILL.md         ← 실행 환경 PATH, lint 명령어
 ```
 
+## 가이드
+
+인덱스 레포 패턴 전체 개념·셋업 절차·템플릿: [`docs/index-repo-pattern.md`](docs/index-repo-pattern.md)
+
 ## 업데이트
 
 ```bash
