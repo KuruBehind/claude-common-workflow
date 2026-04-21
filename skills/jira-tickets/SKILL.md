@@ -1,47 +1,25 @@
 ---
 name: jira-tickets
-description: "Jira 티켓 생성 절차 — tickets.md를 Jira Task/Sub-task로 변환. MCP 설정, 프로젝트 매핑, 에픽 목록, curl 생성 방법 포함."
+description: "Jira 티켓 생성 절차 — tickets.md를 Jira Task/Sub-task로 변환. 자격증명(.env.local), 프로젝트 매핑, curl 생성 방법 포함."
 ---
 
 # Jira 티켓 생성
 
-> 이 파일은 공통 템플릿입니다. 프로젝트별 Jira 설정(이메일, URL, 프로젝트 키, 에픽 목록)은  
-> 워크스페이스의 `skills/jira-tickets/SKILL.md`에 오버라이드하여 관리하세요.
-
 ## 사전 확인
 
-### MCP 설정 확인
+### 자격증명 확인
 
 ```bash
-cat ~/.claude/mcp.json
-# mcpServers.jira.env 아래 JIRA_URL, JIRA_EMAIL, JIRA_API_TOKEN 필수
+source ../claude-common-workflow/.env.local
+# JIRA_AUTH, JIRA_BASE 환경변수가 설정됨
 ```
 
-없으면 추가:
+없으면 `.env.example`을 복사해 생성:
 
-```json
-{
-  "mcpServers": {
-    "jira": {
-      "command": "npx",
-      "args": ["-y", "mcp-atlassian"],
-      "env": {
-        "JIRA_URL": "https://<your-domain>.atlassian.net",
-        "JIRA_EMAIL": "<your-email@company.com>",
-        "JIRA_API_TOKEN": "<token>"
-      }
-    }
-  }
-}
+```bash
+cp ../claude-common-workflow/.env.example ../claude-common-workflow/.env.local
+# .env.local을 열어 실제 값으로 채울 것
 ```
-
-### 서브프로젝트 → Jira 프로젝트 매핑
-
-각 서브프로젝트의 `CLAUDE.md`에 명시된 Jira 키를 우선 확인. 없으면 워크스페이스 `skills/jira-tickets/SKILL.md` 참조.
-
-| 서브프로젝트 | Jira 키 | 에픽 타입 ID | Task 타입 ID | Sub-task 타입 ID |
-|------------|--------|------------|------------|----------------|
-| <!-- 서브프로젝트명 --> | <!-- KEY --> | <!-- ID --> | <!-- ID --> | <!-- ID --> |
 
 ### 활성 에픽 목록
 
@@ -52,13 +30,12 @@ cat ~/.claude/mcp.json
 에픽 목록 최신화:
 
 ```bash
-AUTH="<email>:<token>"
-JIRA_URL="https://<your-domain>.atlassian.net"
+source .env.local
 PROJECT="<PROJECT_KEY>"
 EPIC_TYPE_ID="<epic-issuetype-id>"
 
-curl -s -u "$AUTH" -H "Accept: application/json" \
-  "$JIRA_URL/rest/api/3/search/jql" \
+curl -s -u "$JIRA_AUTH" -H "Accept: application/json" \
+  "$JIRA_BASE/search/jql" \
   -X POST -H "Content-Type: application/json" \
   -d "{\"jql\":\"project=$PROJECT AND issuetype=$EPIC_TYPE_ID ORDER BY created DESC\",\"fields\":[\"summary\"],\"maxResults\":20}"
 ```
@@ -126,35 +103,69 @@ curl -s -u "$AUTH" -H "Accept: application/json" \
 > curl `-d` 인라인은 UTF-8 파싱 오류 발생.
 
 ```bash
-AUTH="<email>:<JIRA_API_TOKEN>"
-BASE="https://<your-domain>.atlassian.net/rest/api/3"
+source ../claude-common-workflow/.env.local
 PROJECT_KEY="<KEY>"
 TASK_TYPE_ID="<task-issuetype-id>"
 SUBTASK_TYPE_ID="<subtask-issuetype-id>"
 EPIC_KEY="<KEY-N>"
 
+# 0. 담당자 accountId 조회
+curl -s -u "$JIRA_AUTH" "$JIRA_BASE/myself" | grep -o '"accountId":"[^"]*"'
+# → "accountId":"xxxxx"
+
 # 1. Task 생성 (## 섹션) → 반환된 key를 Sub-task parent로 사용
 cat > /tmp/issue.json << 'EOF'
-{"fields":{"project":{"key":"PROJECT_KEY"},"summary":"[섹션명]","issuetype":{"id":"TASK_TYPE_ID"},"parent":{"key":"EPIC_KEY"},"priority":{"name":"Highest"}}}
+{
+  "fields": {
+    "project": {"key": "PROJECT_KEY"},
+    "summary": "[섹션명]",
+    "issuetype": {"id": "TASK_TYPE_ID"},
+    "parent": {"key": "EPIC_KEY"},
+    "priority": {"name": "Highest"},
+    "assignee": {"accountId": "<accountId>"},
+    "description": {
+      "type": "doc", "version": 1,
+      "content": [{"type": "paragraph", "content": [{"type": "text", "text": "작업 배경 및 내용 요약"}]}]
+    }
+  }
+}
 EOF
-curl -s -u "$AUTH" -X POST \
+curl -s -u "$JIRA_AUTH" -X POST \
   -H "Accept: application/json" -H "Content-Type: application/json; charset=utf-8" \
-  "$BASE/issue" --data-binary @/tmp/issue.json
+  "$JIRA_BASE/issue" --data-binary @/tmp/issue.json
 # → {"key":"KEY-XX"}
 
 # 2. Sub-task 생성 (### 항목)
 cat > /tmp/issue.json << 'EOF'
-{"fields":{"project":{"key":"PROJECT_KEY"},"summary":"[FE] 항목 제목","issuetype":{"id":"SUBTASK_TYPE_ID"},"parent":{"key":"KEY-XX"},"priority":{"name":"Highest"}}}
+{
+  "fields": {
+    "project": {"key": "PROJECT_KEY"},
+    "summary": "[FE] 항목 제목",
+    "issuetype": {"id": "SUBTASK_TYPE_ID"},
+    "parent": {"key": "KEY-XX"},
+    "priority": {"name": "Highest"},
+    "assignee": {"accountId": "<accountId>"}
+  }
+}
 EOF
-curl -s -u "$AUTH" -X POST \
+curl -s -u "$JIRA_AUTH" -X POST \
   -H "Accept: application/json" -H "Content-Type: application/json; charset=utf-8" \
-  "$BASE/issue" --data-binary @/tmp/issue.json
+  "$JIRA_BASE/issue" --data-binary @/tmp/issue.json
+
+# 3. PR 연결 (Task에 GitHub PR 원격 링크 추가)
+curl -s -u "$JIRA_AUTH" -X POST \
+  -H "Accept: application/json" -H "Content-Type: application/json; charset=utf-8" \
+  "$JIRA_BASE/issue/KEY-XX/remotelink" \
+  -d "{\"object\":{\"url\":\"https://github.com/<org>/<repo>/pull/<pr_number>\",\"title\":\"PR #<pr_number>: <PR 제목>\",\"icon\":{\"url16x16\":\"https://github.com/favicon.ico\",\"title\":\"GitHub\"}}}"
 ```
 
 ## 완료 기준
 
-- [ ] MCP 설정 확인
+- [ ] `.env.local` 존재 확인 (`source ../claude-common-workflow/.env.local`)
 - [ ] 대상 에픽 키 확인
 - [ ] `## 섹션` 수만큼 Task 생성 + 에픽 하위 연결
 - [ ] `### 항목` 수만큼 Sub-task 생성 + Task 하위 연결
 - [ ] 우선순위 매핑 확인
+- [ ] 담당자(assignee) 지정 — `GET /myself`로 accountId 조회 후 설정
+- [ ] Task에 작업 배경/내용 description 작성 (ADF 형식)
+- [ ] Task에 PR 원격 링크 연결 — 여러 Sub-task가 하나의 PR인 경우 상위 Task에만 연결
