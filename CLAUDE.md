@@ -15,11 +15,9 @@
 
 ## 스킬 카탈로그
 
-| 스킬 | 경로 | 용도 |
-|------|------|------|
-| 워크플로우 | `skills/workflow/SKILL.md` | step 인덱스 및 실행 절차 |
-| 브레인스토밍 | `skills/brainstorming/SKILL.md` | Step 0a |
-| 플랜 작성 | `skills/writing-plans/SKILL.md` | Step 0b |
-| Jira 티켓 | `skills/jira-tickets/SKILL.md` | Step 0c |
-| 서브에이전트 | `skills/subagent-dev/SKILL.md` | Step 2 |
-| 정책서 작성 | `skills/writing-policy/SKILL.md` | Step 7 |
+@skills/workflow/SKILL.md
+@skills/brainstorming/SKILL.md
+@skills/writing-plans/SKILL.md
+@skills/jira-tickets/SKILL.md
+@skills/subagent-dev/SKILL.md
+@skills/writing-policy/SKILL.md
