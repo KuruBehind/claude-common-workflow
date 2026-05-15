@@ -280,6 +280,36 @@ git worktree remove ../{project}-feat-{feature}
 
 ---
 
+## 예외 경로 D 상세 — 세션 재개
+
+작업 환경이 변경됐을 가능성이 높으므로, 기존 워크트리 유무와 관계없이 **항상 새 워크트리를 구성**합니다.
+
+```bash
+# 1. PR 정보 파악
+gh pr view {PR_URL}  # 브랜치명·상태·최근 커밋 확인
+
+# 2. 기존 워크트리 정리 (있는 경우)
+git worktree list
+git worktree remove ../{project}-feat-{feature}  # 있으면 제거
+
+# 3. 새 워크트리 구성
+git -C ../{sub-repo} fetch origin feat/{feature}
+git -C ../{sub-repo} worktree add ../{project}-feat-{feature} origin/feat/{feature}
+cd ../{project}-feat-{feature} && git checkout feat/{feature} && git pull
+
+# 4. 의존성 재설치
+# flutter pub get / npm install 등
+
+# 5. 현재 상태 보고
+git log --oneline -5
+git status
+git diff origin/dev...HEAD --stat
+```
+
+상태 보고 후 사용자 확인을 받고 이어서 진행할 step을 결정합니다.
+
+---
+
 ## 예외 경로
 
 | 예외 | 조건 | 생략 가능 step |
@@ -287,4 +317,4 @@ git worktree remove ../{project}-feat-{feature}
 | A. 경량 사이클 | 설정·문서만 변경 (코드 변경 없음, 사용자 명시 확인 필수) | 2, 3, 6, 8 생략 가능. 7은 필수 |
 | B. dev 직접 푸시 | 경량 사이클 + 사용자 명시 요청 + 정적 검증(7) 통과 | 워크트리 없이 직접 커밋 가능 |
 | C. 머지 충돌 | `git merge` 충돌 발생 | 빌드 재검증 후 step 9 재진입 |
-| D. 세션 재개 | 세션 중단 후 복귀 | `git worktree list && git status && git log --oneline -5` 진단 후 보고 |
+| D. 세션 재개 | PR URL 또는 브랜치명으로 작업 재개 요청 | 아래 절차 참조 |
