@@ -43,11 +43,37 @@ Step 11 워크트리 정리
 
 ---
 
+## 레포 구조 (MANDATORY — 항상 이 구조를 전제)
+
+모든 프로젝트는 **인덱스 레포와 서브 레포가 같은 경로에 나란히** 위치합니다:
+
+```
+[workspace]/
+├── claude-common-workflow/   ← 공통 워크플로우 스킬 레포
+├── [index-repo]/             ← 인덱스 레포 (CLAUDE.md, skills/ 포함)
+├── [sub-repo-a]/             ← 서브 레포 A (독립 git)
+├── [sub-repo-b]/             ← 서브 레포 B (독립 git)
+└── [sub-repo-a]-feat-[x]/   ← 워크트리 (작업 중 생성)
+```
+
+**서브 레포가 로컬에 없는 경우 — 클론 후 진행**
+
+사용자가 요청한 레포가 로컬에 없으면 작업 전에 클론합니다:
+
+```bash
+# 인덱스 레포 위치에서
+ls ../  # 서브 레포 존재 여부 확인
+git clone git@github.com:{org}/{sub-repo}.git ../{sub-repo}
+```
+
+> 클론 대상 org/레포명은 인덱스 레포 CLAUDE.md의 서브프로젝트 목록을 참조.
+> 확인이 안 되면 사용자에게 GitHub 레포명을 물어볼 것.
+
+---
+
 ## Step 1. 워크트리 셋업
 
 **워크플로우 시작 전 — 인덱스 레포 최신화 (MANDATORY)**
-
-작업 시작 전 반드시 공통 워크플로우를 최신화합니다:
 
 ```bash
 git -C ../claude-common-workflow pull
@@ -55,17 +81,15 @@ git -C ../claude-common-workflow pull
 
 **워크트리 생성 위치 확인 (MANDATORY)**
 
-워크트리는 **반드시 대상 서브프로젝트 디렉토리 안에서** 생성합니다. 실행 전 현재 위치를 확인하세요:
+워크트리는 **반드시 대상 서브프로젝트 디렉토리 안에서** 생성합니다:
 
 ```bash
 pwd  # 반드시 서브프로젝트 루트여야 함 (예: .../kuru_mart_backoffice)
-     # 인덱스 루트(.../kuru_mart)나 상위 디렉토리에서 실행하면 워크트리 위치가 잘못됨
+     # 인덱스 루트나 상위 디렉토리에서 실행하면 워크트리 위치가 잘못됨
 ```
 
 ```bash
-# 최신화
 git pull
-
 git fetch origin dev
 git worktree add ../{project}-feat-{feature} -b feat/{feature} origin/dev
 cd ../{project}-feat-{feature}
