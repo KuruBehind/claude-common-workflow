@@ -7,7 +7,7 @@ description: "Jira 티켓 생성 절차 — tickets.md를 Jira Task/Sub-task로 
 
 ## 사전 확인
 
-### 자격증명 확인
+### 1. 자격증명 확인
 
 ```bash
 source ../claude-common-workflow/.env.local
@@ -21,16 +21,15 @@ cp ../claude-common-workflow/.env.example ../claude-common-workflow/.env.local
 # .env.local을 열어 실제 값으로 채울 것
 ```
 
-### 활성 에픽 목록
+### 2. 에픽 확인 (사용자 승인 필수)
 
-| 프로젝트 | 에픽 키 | 제목 |
-|---------|--------|------|
-| <!-- KEY --> | <!-- KEY-N --> | <!-- 에픽 제목 --> |
+활성 에픽 목록을 조회해 사용자에게 보여주고, **어느 에픽에 연결할지 확인받습니다.**
 
-에픽 목록 최신화:
+> 에픽 목록은 프로젝트 오버라이드 파일(`skills/jira-tickets/SKILL.md`)을 우선 참조.
+> 최신 목록이 필요하면 아래 명령어로 조회.
 
 ```bash
-source .env.local
+source ../claude-common-workflow/.env.local
 PROJECT="<PROJECT_KEY>"
 EPIC_TYPE_ID="<epic-issuetype-id>"
 
@@ -39,6 +38,22 @@ curl -s -u "$JIRA_AUTH" -H "Accept: application/json" \
   -X POST -H "Content-Type: application/json" \
   -d "{\"jql\":\"project=$PROJECT AND issuetype=$EPIC_TYPE_ID ORDER BY created DESC\",\"fields\":[\"summary\"],\"maxResults\":20}"
 ```
+
+### 3. 중복 티켓 확인 (사용자 승인 필수)
+
+작업 키워드로 기존 티켓을 조회해 결과를 사용자에게 보고합니다.
+유사 티켓이 있으면 새로 만들지 재사용할지 사용자에게 확인받습니다.
+
+```bash
+source ../claude-common-workflow/.env.local
+
+curl -s -u "$JIRA_AUTH" -H "Accept: application/json" \
+  "$JIRA_BASE/search/jql" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{"jql":"project=<PROJECT> AND summary ~ \"<키워드>\" AND statusCategory != Done ORDER BY created DESC","fields":["summary","status","assignee"],"maxResults":5}'
+```
+
+위 두 확인을 마치고 사용자가 에픽과 생성 여부를 승인한 후에만 아래 생성 단계로 진행합니다.
 
 ---
 

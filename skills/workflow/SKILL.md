@@ -109,8 +109,28 @@ Step 2 완료 조건:
 
 **REQUIRED SKILL:** `jira-tickets`
 
-- `tickets.md` 가 있는 경우에만 실행
-- `##` → Task, `###` → Sub-task, 에픽은 기존 키 사용
+- `tickets.md` 가 없으면 이 step 전체 생략.
+
+**HARD GATE: 티켓 생성 전 반드시 사용자 확인.**
+
+생성 전 아래 두 가지를 사용자에게 보고하고 승인받습니다:
+
+1. **에픽 확인** — 활성 에픽 목록을 조회해 "이 작업을 어느 에픽에 연결할까요?" 질문
+2. **중복 티켓 확인** — 동일하거나 유사한 티켓이 이미 존재하는지 조회 후 결과 보고
+
+```bash
+source ../claude-common-workflow/.env.local
+
+# 유사 티켓 검색 (작업 키워드로 조회)
+curl -s -u "$JIRA_AUTH" -H "Accept: application/json" \
+  "$JIRA_BASE/search/jql" \
+  -X POST -H "Content-Type: application/json" \
+  -d '{"jql":"project=<PROJECT> AND summary ~ \"<키워드>\" ORDER BY created DESC","fields":["summary","status","assignee"],"maxResults":5}'
+```
+
+사용자가 에픽을 지정하고 중복 없음을 확인한 후에만 티켓 생성 진행.
+
+- `##` → Task, `###` → Sub-task
 
 > Step 4 완료 후 ExitPlanMode 승인을 받고 Step 5 진입.
 
