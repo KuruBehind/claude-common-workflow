@@ -79,6 +79,23 @@ git clone git@github.com:{org}/{sub-repo}.git ../{sub-repo}
 git -C ../claude-common-workflow pull
 ```
 
+**기존 개발 서버 프로세스 정리 (MANDATORY)**
+
+새 작업 시작 전 이전 작업에서 남은 서버 프로세스를 확인하고 종료합니다:
+
+```bash
+# 프로젝트별 포트 점유 확인
+lsof -i :{port}        # macOS/Linux
+netstat -ano | findstr :{port}  # Windows
+
+# 프로세스 종료
+kill -9 {PID}          # macOS/Linux
+taskkill /PID {PID} /F # Windows
+```
+
+> 실행 중인 서버가 있으면 종료 후 워크트리를 생성합니다.
+> 프로젝트별 포트는 `skills/workflow-env/SKILL.md` 참조.
+
 **워크트리 생성 위치 확인 (MANDATORY)**
 
 워크트리는 **반드시 대상 서브프로젝트 디렉토리 안에서** 생성합니다:
@@ -220,6 +237,20 @@ gh pr list --head $(git branch --show-current) --state all
 | `MERGED` | 이미 머지됨 — 브랜치 재사용 여부 사용자에게 확인 후 결정 |
 | `CLOSED` | 닫힌 PR — 사용자에게 사유 확인 후 재생성 여부 결정 |
 
+## Step 9.5. 개발 서버 실행 + 결과 확인
+
+**클라이언트(UI) 프로젝트는 필수. 서버 전용 작업은 선택.**
+**Step 10 진입 전 완료. 사용자에게 직접 셋업을 요구하지 말 것.**
+
+PR 완료 후 개발 서버를 직접 실행해 사용자가 결과물을 확인할 수 있도록 제공합니다:
+
+1. 실행 명령어는 해당 **서브 레포의 `CLAUDE.md` → "개발 서버 실행" 섹션** 참조 — 명령어를 사용자에게 전달하는 것으로 끝내지 말 것
+2. Claude가 직접 실행 후 접속 URL 제공
+3. 구현한 기능의 동작을 직접 확인하고 결과 보고
+4. 사용자가 확인 완료 의사를 밝히면 Step 10으로 진입
+
+> 이 단계에서 띄운 서버는 Step 11(워크트리 정리) 전에 반드시 종료합니다.
+
 ## Step 10. 정책서 작성 + Jira 티켓 업데이트
 
 **REQUIRED SKILL:** `writing-policy`
@@ -274,7 +305,11 @@ gh pr create --base main
 ## Step 11. 워크트리 정리 (사용자 요청 시에만)
 
 ```bash
-# CWD를 원본 저장소로 복귀 후
+# 1. 실행 중인 개발 서버 종료
+lsof -i :{port} | awk 'NR>1 {print $2}' | xargs kill -9  # macOS/Linux
+taskkill /PID {PID} /F                                     # Windows
+
+# 2. CWD를 원본 저장소로 복귀 후 워크트리 제거
 git worktree remove ../{project}-feat-{feature}
 ```
 
