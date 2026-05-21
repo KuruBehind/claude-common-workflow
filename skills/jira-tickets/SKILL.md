@@ -11,8 +11,12 @@ description: "Jira 티켓 생성 절차 — tickets.md를 Jira Task/Sub-task로 
 
 ```bash
 source ../claude-common-workflow/.env.local
-# JIRA_AUTH, JIRA_BASE 환경변수가 설정됨
+export JIRA_AUTH="$JIRA_EMAIL:$JIRA_API_TOKEN"
+export JIRA_BASE="$JIRA_URL/rest/api/3"
 ```
+
+> `.env.local`은 `JIRA_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`을 정의함.
+> `JIRA_AUTH`, `JIRA_BASE`는 위 두 줄로 직접 조합해야 사용 가능.
 
 없으면 `.env.example`을 복사해 생성:
 
@@ -140,7 +144,7 @@ cat > /tmp/issue.json << 'EOF'
     "assignee": {"accountId": "<accountId>"},
     "description": {
       "type": "doc", "version": 1,
-      "content": [{"type": "paragraph", "content": [{"type": "text", "text": "작업 배경 및 내용 요약"}]}]
+      "content": [{"type": "paragraph", "content": [{"type": "text", "text": "← 아래 Description 작성 가이드에서 타입 선택 후 해당 템플릿 적용"}]}]
     }
   }
 }
@@ -174,6 +178,101 @@ curl -s -u "$JIRA_AUTH" -X POST \
   -d "{\"object\":{\"url\":\"https://github.com/<org>/<repo>/pull/<pr_number>\",\"title\":\"PR #<pr_number>: <PR 제목>\",\"icon\":{\"url16x16\":\"https://github.com/favicon.ico\",\"title\":\"GitHub\"}}}"
 ```
 
+---
+
+## Description 작성 가이드
+
+티켓 타입에 따라 아래 템플릿 중 하나를 선택. 섹션 순서는 유지하되, 해당 없는 항목은 생략 가능.
+
+### 타입 A — 기능 개발 / 개선
+
+```
+목적
+왜 이 기능이 필요한가. 사용자 관점에서 한두 문장으로.
+예) 유저가 키워드를 입력해 상품을 검색할 때 Shop/GetItems 결과를 검색 페이지에 표시한다.
+
+상세
+- [ ] 작업 항목 1 (레이어/담당 명시)
+- [ ] 작업 항목 2
+- [ ] 작업 항목 3
+
+참고
+- 컨플루언스: <링크>
+- API 문서: <링크>
+- 디자인(Figma): <링크>
+- PR: <링크>
+```
+
+### 타입 B — 앱/UI 버그 리포트
+
+```
+테스트 정보
+버전 :
+플랫폼 : (iOS / Android / Web)
+
+케이스
+[사진 및 영상]
+
+case1 인 상황에서 발생
+case2 인 상황에서는 정상 동작함
+
+참고
+- 관련 티켓: <KEY-XX>
+- PR: <링크>
+```
+
+### 타입 C — 인프라 / 운영 이슈
+
+```
+현상
+언제, 어떤 증상이 발생하는가. 알림 내용, 빈도, 영향 범위 포함.
+예) 매일 새벽 1시 Cloud Scheduler 실패 알림 2건 수신. 운영 체감 이슈는 없었으나 Scheduler 기준 매일 실패 상태.
+
+원인 분석
+로그/코드 분석으로 확인한 근본 원인 체인. 타임라인 형식 권장.
+- [HH:MM] 이벤트 A 발생
+- [HH:MM] 이벤트 B → 이벤트 A의 결과
+- 결론: 핵심 원인 한 줄 요약
+
+조치 내용
+변경한 내용과 이유. 명령어·코드·설정값은 코드블록으로.
+1. 항목명 — 변경 전 → 변경 후
+   이유: 왜 이 값으로 변경했는가.
+   ```
+   실행 명령어 또는 코드
+   ```
+
+검증 방법
+언제, 어떻게 정상 여부를 확인할지.
+- 확인 시점: 예) 익일 새벽 1시 이후
+- 확인 방법: 예) GCP Scheduler 콘솔에서 SUCCESS 상태 확인
+
+잔여 검토 항목 (선택)
+이번 범위 밖이지만 후속 대응이 필요한 항목.
+- 항목 A — 담당/일정 미정
+- 항목 B — 별도 티켓 권장
+
+참고
+- PR: <링크>
+- 관련 로그 쿼리: <링크>
+- 관련 티켓: <KEY-XX>
+```
+
+### 공통 규칙
+
+- **참고 섹션은 항상 마지막.** PR, 문서, 관련 티켓 링크를 모은다.
+- **PR이 생성된 경우** description 참고 섹션에 링크 추가 + Jira 원격 링크(`remotelink`) API로도 연결:
+  ```bash
+  curl -s -u "$JIRA_AUTH" -X POST \
+    -H "Content-Type: application/json" \
+    "$JIRA_BASE/issue/<KEY>/remotelink" \
+    -d "{\"object\":{\"url\":\"<PR_URL>\",\"title\":\"PR #<N>: <제목>\",\"icon\":{\"url16x16\":\"https://github.com/favicon.ico\",\"title\":\"GitHub\"}}}"
+  ```
+- **첨부 문서(Confluence 등)가 있는 경우** 참고 섹션에 URL 추가.
+- 섹션 제목은 한국어로 통일. 코드블록·명령어는 영어 그대로.
+
+---
+
 ## 완료 기준
 
 - [ ] `.env.local` 존재 확인 (`source ../claude-common-workflow/.env.local`)
@@ -182,5 +281,5 @@ curl -s -u "$JIRA_AUTH" -X POST \
 - [ ] `### 항목` 수만큼 Sub-task 생성 + Task 하위 연결
 - [ ] 우선순위 매핑 확인
 - [ ] 담당자(assignee) 지정 — `GET /myself`로 accountId 조회 후 설정
-- [ ] Task에 작업 배경/내용 description 작성 (ADF 형식)
-- [ ] Task에 PR 원격 링크 연결 — 여러 Sub-task가 하나의 PR인 경우 상위 Task에만 연결
+- [ ] Task에 description 작성 — 타입 A(기능)/B(버그)/C(인프라) 중 해당 템플릿 적용
+- [ ] PR 또는 문서가 있는 경우 description 참고 섹션 + remotelink API 두 곳 모두 연결
