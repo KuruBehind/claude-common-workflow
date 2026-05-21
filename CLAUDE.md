@@ -21,3 +21,4 @@
 @skills/jira-tickets/SKILL.md
 @skills/subagent-dev/SKILL.md
 @skills/writing-policy/SKILL.md
+@skills/gcloud/SKILL.md
