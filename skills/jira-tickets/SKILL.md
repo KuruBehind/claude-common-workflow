@@ -281,26 +281,30 @@ curl -s -u "$JIRA_AUTH" -X POST \
 
 ### ADF 형식 규칙
 
-- **소제목** — `heading` 노드(level 2). bold 텍스트 사용 금지.
-- **완료 기준 / 작업 내용** — `bulletList` + `[ ]` / `[x]` 텍스트 표기.
-  - Jira Cloud REST API는 `taskList` 노드를 description에서 지원하지 않음 (프로젝트 설정에 따라 다름).
-  - `[ ]` → 미완료, `[x]` → 완료로 시각적 표기.
+- **소제목** — `heading` 노드(level 2) + `strong` mark. `localId` 필수.
+- **완료 기준 / 작업 내용** — `taskList` / `taskItem` 노드 사용.
+  - `taskItem.content`는 `text` 노드 직접 담기. `paragraph`로 감싸면 INVALID_INPUT.
+  - `state`: `"TODO"` (미완료) / `"DONE"` (완료)
+  - `localId`: UUID 형식 필수 (예: `"f31ce62f-9c59-4837-b8b9-22a96952a578"`)
 
 ```json
-{"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "소제목"}]}
-{"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "[ ] 미완료 항목"}]}]}
-{"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "[x] 완료된 항목"}]}]}
+{"type": "taskList", "attrs": {"localId": "<uuid>"}, "content": [
+  {"type": "taskItem", "attrs": {"localId": "<uuid>", "state": "TODO"},
+   "content": [{"type": "text", "text": "미완료 항목"}]},
+  {"type": "taskItem", "attrs": {"localId": "<uuid>", "state": "DONE"},
+   "content": [{"type": "text", "text": "완료된 항목"}]}
+]}
 ```
 
 ### 진행 중 AC 업데이트 패턴
 
 AC 항목 달성 시 두 가지 방식으로 기록:
 
-1. **description 업데이트** — `[ ]` → `[x]` 로 교체 후 전체 PUT (Jira는 부분 업데이트 미지원)
+1. **description 업데이트** — 해당 `taskItem`의 `state: "TODO"` → `"DONE"` 변경 후 전체 PUT (Jira는 부분 업데이트 미지원)
 2. **코멘트 추가** — 달성 내용과 시점을 코멘트로 기록 → 히스토리 보존
 
 ```bash
-# 1. description의 [ ] → [x] 교체 후 PUT
+# 1. description의 taskItem state 변경 후 전체 PUT
 curl -s -u "$JIRA_AUTH" -X PUT \
   -H "Content-Type: application/json; charset=utf-8" \
   "$JIRA_BASE/issue/<TICKET-KEY>" --data-binary @/tmp/description-updated.json
@@ -335,10 +339,10 @@ curl -s -u "$JIRA_AUTH" -X POST \
       {"type": "taskItem", "attrs": {"localId": "w2", "state": "TODO"}, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "작업 항목 2"}]}]}
     ]},
 
-    {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "완료 기준"}]},
-    {"type": "taskList", "attrs": {"localId": "ac-list"}, "content": [
-      {"type": "taskItem", "attrs": {"localId": "ac1", "state": "TODO"}, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "완료 조건 1"}]}]},
-      {"type": "taskItem", "attrs": {"localId": "ac2", "state": "TODO"}, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "정적 검증 error 0개"}]}]}
+    {"type": "heading", "attrs": {"level": 2, "localId": "h3"}, "content": [{"type": "text", "text": "완료 기준", "marks": [{"type": "strong"}]}]},
+    {"type": "taskList", "attrs": {"localId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeee01"}, "content": [
+      {"type": "taskItem", "attrs": {"localId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeee02", "state": "TODO"}, "content": [{"type": "text", "text": "완료 조건 1"}]},
+      {"type": "taskItem", "attrs": {"localId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeee03", "state": "TODO"}, "content": [{"type": "text", "text": "정적 검증 error 0개"}]}
     ]},
 
     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "참고"}]},
