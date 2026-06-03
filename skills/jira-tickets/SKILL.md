@@ -298,18 +298,29 @@ curl -s -u "$JIRA_AUTH" -X POST \
 
 ### 진행 중 AC 업데이트 패턴
 
-AC 항목 달성 시 두 가지 방식으로 기록:
+**Smart Checklist 플러그인이 설치된 경우 (권장):**
 
-1. **description 업데이트** — 해당 `taskItem`의 `state: "TODO"` → `"DONE"` 변경 후 전체 PUT (Jira는 부분 업데이트 미지원)
-2. **코멘트 추가** — 달성 내용과 시점을 코멘트로 기록 → 히스토리 보존
+issue properties API로 관리 — plain text 형식, description과 독립적, 부분 업데이트 가능.
 
 ```bash
-# 1. description의 taskItem state 변경 후 전체 PUT
+# GET — 현재 체크리스트 조회
+curl -s -u "$JIRA_AUTH" \
+  "$JIRA_BASE/issue/<TICKET-KEY>/properties/com.railsware.SmartChecklist.checklist"
+
+# PUT — 항목 체크 상태 업데이트 (- [ ] 미완료 / - [x] 완료)
 curl -s -u "$JIRA_AUTH" -X PUT \
   -H "Content-Type: application/json; charset=utf-8" \
-  "$JIRA_BASE/issue/<TICKET-KEY>" --data-binary @/tmp/description-updated.json
+  "$JIRA_BASE/issue/<TICKET-KEY>/properties/com.railsware.SmartChecklist.checklist" \
+  -d '{"value":"- [x] 완료된 항목\n- [ ] 미완료 항목\n"}'
+```
 
-# 2. 달성 코멘트 추가
+**Smart Checklist 미설치 시:**
+
+1. description의 `taskItem` `state: "TODO"` → `"DONE"` 변경 후 전체 PUT
+2. 달성 코멘트 추가 (히스토리 보존)
+
+```bash
+# 코멘트로 진행 상황 기록
 cat > /tmp/progress.json << 'EOF'
 {"body": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "✅ <AC 항목> 완료"}]}]}}
 EOF
