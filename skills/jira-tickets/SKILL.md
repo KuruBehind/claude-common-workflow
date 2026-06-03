@@ -297,24 +297,28 @@ curl -s -u "$JIRA_AUTH" -X POST \
 
 ### 진행 상황 관리 — Smart Checklist
 
-구현 시작 시 Smart Checklist 초기 생성, AC 항목과 동일하게 세팅.
-각 항목 달성 시 `- [ ]` → `- [x]` 로 PUT 업데이트.
+**초기 세팅 (Step 1 워크트리 생성 직후):** API로 항목 초기화.
+**체크 상태 업데이트:** Smart Checklist는 체크 상태를 플러그인이 자체 관리 — API로 변경 불가. **Jira UI에서 직접 체크**.
 
 ```bash
-# GET — 현재 진행 상황 조회
+# GET — 현재 체크리스트 조회
 curl -s -u "$JIRA_AUTH" \
   "$JIRA_BASE/issue/<TICKET-KEY>/properties/com.railsware.SmartChecklist.checklist"
 
-# PUT — 초기 생성 또는 항목 체크 업데이트
+# PUT — 항목 초기 세팅 (바디 전체가 저장 값, {"value":...} 래핑 금지)
+# 한국어 포함 시 반드시 파일로 작성 후 --data-binary 사용
+cat > /tmp/checklist.json << 'EOF'
+"- [ ] AC 항목 1\n- [ ] AC 항목 2\n- [ ] AC 항목 3\n"
+EOF
 curl -s -u "$JIRA_AUTH" -X PUT \
   -H "Content-Type: application/json; charset=utf-8" \
   "$JIRA_BASE/issue/<TICKET-KEY>/properties/com.railsware.SmartChecklist.checklist" \
-  -d '{"value":"- [x] 완료된 항목\n- [ ] 진행 중 항목\n- [ ] 미시작 항목\n"}'
+  --data-binary @/tmp/checklist.json
 ```
 
-> Smart Checklist 미설치 시: 코멘트로 진행 상황 기록 (`✅ <항목> 완료`).
+> **주의:** 요청 바디 전체가 저장 값. `{"value": "..."}` 로 감싸면 이중 중첩됨.
 
-> 업데이트 시점: 각 항목 검증 완료 직후. Step 4~5 루프에서 자연스럽게 체크.
+> Smart Checklist 미설치 시: 코멘트로 진행 상황 기록 (`✅ <항목> 완료`).
 
 ---
 
