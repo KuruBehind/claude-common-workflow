@@ -448,36 +448,49 @@ curl -s -u "$JIRA_AUTH" -X PUT \
 
 워크트리 루트에 `context.md` 생성. 수동 편집 금지. 세션 재개 시 재생성.
 
+> **경로 주의:** 서브 레포가 인덱스 레포 내부에 중첩된 경우 (`kuru/kuru_mobile/`),
+> `REPO_ROOT/../claude-common-workflow` 가 아닌 `REPO_ROOT/../../claude-common-workflow` 로 접근해야 함.
+> `WORKSPACE_ROOT=$(cd "$REPO_ROOT/../.." && pwd)` 로 워크스페이스 루트를 먼저 구하고 사용.
+
 ```bash
 REPO_ROOT=$(git rev-parse --git-common-dir | xargs dirname)
-source "$REPO_ROOT/../claude-common-workflow/.env.local"
+# 중첩 레포 대응: 워크스페이스 루트에서 claude-common-workflow 탐색
+WORKSPACE_ROOT=$(cd "$REPO_ROOT/../.." && pwd)
+if [ -f "$WORKSPACE_ROOT/claude-common-workflow/.env.local" ]; then
+  source "$WORKSPACE_ROOT/claude-common-workflow/.env.local"
+else
+  source "$REPO_ROOT/../claude-common-workflow/.env.local"
+fi
 export JIRA_AUTH="$JIRA_EMAIL:$JIRA_API_TOKEN"
 export JIRA_BASE="$JIRA_URL/rest/api/3"
-
 TICKET_KEY="<TICKET-KEY>"
-SUMMARY=$(curl -s -u "$JIRA_AUTH" "$JIRA_BASE/issue/$TICKET_KEY?fields=summary,issuetype,priority,parent" \
-  | grep -o '"summary":"[^"]*"' | head -1 | cut -d'"' -f4)
-ISSUE_TYPE=$(curl -s -u "$JIRA_AUTH" "$JIRA_BASE/issue/$TICKET_KEY?fields=issuetype" \
-  | grep -o '"issuetype":{[^}]*}' | grep -o '"name":"[^"]*"' | cut -d'"' -f4)
-PRIORITY=$(curl -s -u "$JIRA_AUTH" "$JIRA_BASE/issue/$TICKET_KEY?fields=priority" \
-  | grep -o '"priority":{[^}]*}' | grep -o '"name":"[^"]*"' | cut -d'"' -f4)
-EPIC=$(curl -s -u "$JIRA_AUTH" "$JIRA_BASE/issue/$TICKET_KEY?fields=parent" \
-  | grep -o '"parent":{[^}]*}' | grep -o '"key":"[^"]*"' | cut -d'"' -f4)
 
-cat > context.md << EOF
+# JSON 파싱: node 우선, 없으면 grep (중첩 JSON 오파싱 주의)
+curl -s -u "$JIRA_AUTH" "$JIRA_BASE/issue/$TICKET_KEY?fields=summary,issuetype,priority,parent" \
+  > ./ticket_tmp.json
+
+node -e "
+const fs = require('fs');
+const d = JSON.parse(fs.readFileSync('./ticket_tmp.json','utf8'));
+const f = d.fields;
+const md = '# $TICKET_KEY ' + f.summary + '\n\n## 티켓 정보\n- 타입: ' + f.issuetype.name + '\n- 우선순위: ' + f.priority.name + '\n- 에픽: ' + (f.parent ? f.parent.key : '없음') + '\n\n## 확정 결정\n<!-- 브레인스토밍·설계 중 확정된 결정을 여기에 기록. 변경 시 이유 한 줄 포함. -->\n\n## 연결된 PR\n<!-- PR 생성 후 여기에 추가 -->\n';
+fs.writeFileSync('context.md', md, 'utf8');
+fs.unlinkSync('./ticket_tmp.json');
+" 2>/dev/null || {
+  # node 없을 경우 grep 폴백 (중첩 구조 주의)
+  SUMMARY=$(grep -o '"summary":"[^"]*"' ./ticket_tmp.json | head -1 | cut -d'"' -f4)
+  cat > context.md << EOF
 # $TICKET_KEY $SUMMARY
 
 ## 티켓 정보
-- 타입: $ISSUE_TYPE
-- 우선순위: $PRIORITY
-- 에픽: $EPIC
+(node 미설치 — 직접 입력 필요)
 
 ## 확정 결정
-<!-- 브레인스토밍·설계 중 확정된 결정을 여기에 기록. 변경 시 이유 한 줄 포함. -->
 
 ## 연결된 PR
-<!-- PR 생성 후 여기에 추가 -->
 EOF
+  rm -f ./ticket_tmp.json
+}
 ```
 
 ---
