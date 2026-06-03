@@ -5,12 +5,67 @@ description: "Jira 티켓 생성 절차 — tickets.md를 Jira Task/Sub-task로 
 
 # Jira 티켓 생성
 
+## 티켓 작업 의도별 동사
+
+| 의도 | 동작 | 주요 사용 시점 |
+|------|------|--------------|
+| `get` | 티켓 정보 조회, context.md 생성 | Step 0, 세션 재개 |
+| `work` | 티켓 상태 In Progress 전환, 작업 시작 코멘트 | Step 1 셋업 완료 후 |
+| `qa` | 구현 내용 코멘트, PR 연결 | Step 6 PR 생성 후 |
+| `act` | 티켓 상태 Done 전환, 종결 코멘트 | Step 8 종결 |
+
+---
+
+## 티켓 품질 리뷰 (Step 0 — 게이트)
+
+티켓 URL 또는 키를 받으면 아래 체크리스트를 실행. 미흡 항목은 Jira 코멘트 + 작성자 멘션으로 보완 요청.
+
+### 공통 체크리스트
+- [ ] 목적/배경 — 왜 이 작업이 필요한지 명시되어 있는가
+- [ ] 완료 기준 (AC) — 언제 Done으로 볼 수 있는지 명시되어 있는가
+- [ ] 기술 범위 — FE / BE / 인프라 중 어느 레이어를 건드리는지 명시되어 있는가
+
+> 프로젝트별 추가 항목은 각 워크스페이스 `skills/jira-tickets/SKILL.md`에서 오버라이드.
+
+### 미흡 시 처리
+
+```bash
+REPO_ROOT=$(git rev-parse --git-common-dir | xargs dirname)
+source "$REPO_ROOT/../claude-common-workflow/.env.local"
+export JIRA_AUTH="$JIRA_EMAIL:$JIRA_API_TOKEN"
+export JIRA_BASE="$JIRA_URL/rest/api/3"
+
+# 코멘트 작성 + 작성자 멘션
+cat > /tmp/review-comment.json << 'EOF'
+{
+  "body": {
+    "type": "doc", "version": 1,
+    "content": [{
+      "type": "paragraph",
+      "content": [
+        {"type": "mention", "attrs": {"id": "<작성자-accountId>"}},
+        {"type": "text", "text": " 아래 항목 보완 부탁드립니다:\n- <미흡 항목 목록>"}
+      ]
+    }]
+  }
+}
+EOF
+curl -s -u "$JIRA_AUTH" -X POST \
+  -H "Content-Type: application/json; charset=utf-8" \
+  "$JIRA_BASE/issue/<TICKET-KEY>/comment" --data-binary @/tmp/review-comment.json
+```
+
+사용자에게 "보완 후 진행할까요?" 확인. override 선택 시 미흡 상태로도 진행 가능.
+
+---
+
 ## 사전 확인
 
 ### 1. 자격증명 확인
 
 ```bash
-source ../claude-common-workflow/.env.local
+REPO_ROOT=$(git rev-parse --git-common-dir | xargs dirname)
+source "$REPO_ROOT/../claude-common-workflow/.env.local"
 export JIRA_AUTH="$JIRA_EMAIL:$JIRA_API_TOKEN"
 export JIRA_BASE="$JIRA_URL/rest/api/3"
 ```
@@ -21,7 +76,8 @@ export JIRA_BASE="$JIRA_URL/rest/api/3"
 없으면 `.env.example`을 복사해 생성:
 
 ```bash
-cp ../claude-common-workflow/.env.example ../claude-common-workflow/.env.local
+REPO_ROOT=$(git rev-parse --git-common-dir | xargs dirname)
+cp "$REPO_ROOT/../claude-common-workflow/.env.example" "$REPO_ROOT/../claude-common-workflow/.env.local"
 # .env.local을 열어 실제 값으로 채울 것
 ```
 
@@ -33,7 +89,8 @@ cp ../claude-common-workflow/.env.example ../claude-common-workflow/.env.local
 > 최신 목록이 필요하면 아래 명령어로 조회.
 
 ```bash
-source ../claude-common-workflow/.env.local
+REPO_ROOT=$(git rev-parse --git-common-dir | xargs dirname)
+source "$REPO_ROOT/../claude-common-workflow/.env.local"
 PROJECT="<PROJECT_KEY>"
 EPIC_TYPE_ID="<epic-issuetype-id>"
 
@@ -49,7 +106,8 @@ curl -s -u "$JIRA_AUTH" -H "Accept: application/json" \
 유사 티켓이 있으면 새로 만들지 재사용할지 사용자에게 확인받습니다.
 
 ```bash
-source ../claude-common-workflow/.env.local
+REPO_ROOT=$(git rev-parse --git-common-dir | xargs dirname)
+source "$REPO_ROOT/../claude-common-workflow/.env.local"
 
 curl -s -u "$JIRA_AUTH" -H "Accept: application/json" \
   "$JIRA_BASE/search/jql" \
@@ -122,7 +180,8 @@ curl -s -u "$JIRA_AUTH" -H "Accept: application/json" \
 > curl `-d` 인라인은 UTF-8 파싱 오류 발생.
 
 ```bash
-source ../claude-common-workflow/.env.local
+REPO_ROOT=$(git rev-parse --git-common-dir | xargs dirname)
+source "$REPO_ROOT/../claude-common-workflow/.env.local"
 PROJECT_KEY="<KEY>"
 TASK_TYPE_ID="<task-issuetype-id>"
 SUBTASK_TYPE_ID="<subtask-issuetype-id>"
@@ -273,9 +332,47 @@ case2 인 상황에서는 정상 동작함
 
 ---
 
+## context.md 생성 (Step 1 워크트리 생성 직후)
+
+워크트리 루트에 `context.md` 생성. 수동 편집 금지. 세션 재개 시 재생성.
+
+```bash
+REPO_ROOT=$(git rev-parse --git-common-dir | xargs dirname)
+source "$REPO_ROOT/../claude-common-workflow/.env.local"
+export JIRA_AUTH="$JIRA_EMAIL:$JIRA_API_TOKEN"
+export JIRA_BASE="$JIRA_URL/rest/api/3"
+
+TICKET_KEY="<TICKET-KEY>"
+SUMMARY=$(curl -s -u "$JIRA_AUTH" "$JIRA_BASE/issue/$TICKET_KEY?fields=summary,issuetype,priority,parent" \
+  | grep -o '"summary":"[^"]*"' | head -1 | cut -d'"' -f4)
+ISSUE_TYPE=$(curl -s -u "$JIRA_AUTH" "$JIRA_BASE/issue/$TICKET_KEY?fields=issuetype" \
+  | grep -o '"issuetype":{[^}]*}' | grep -o '"name":"[^"]*"' | cut -d'"' -f4)
+PRIORITY=$(curl -s -u "$JIRA_AUTH" "$JIRA_BASE/issue/$TICKET_KEY?fields=priority" \
+  | grep -o '"priority":{[^}]*}' | grep -o '"name":"[^"]*"' | cut -d'"' -f4)
+EPIC=$(curl -s -u "$JIRA_AUTH" "$JIRA_BASE/issue/$TICKET_KEY?fields=parent" \
+  | grep -o '"parent":{[^}]*}' | grep -o '"key":"[^"]*"' | cut -d'"' -f4)
+
+cat > context.md << EOF
+# $TICKET_KEY $SUMMARY
+
+## 티켓 정보
+- 타입: $ISSUE_TYPE
+- 우선순위: $PRIORITY
+- 에픽: $EPIC
+
+## 확정 결정
+<!-- 브레인스토밍·설계 중 확정된 결정을 여기에 기록. 변경 시 이유 한 줄 포함. -->
+
+## 연결된 PR
+<!-- PR 생성 후 여기에 추가 -->
+EOF
+```
+
+---
+
 ## 완료 기준
 
-- [ ] `.env.local` 존재 확인 (`source ../claude-common-workflow/.env.local`)
+- [ ] `.env.local` 존재 확인 — `REPO_ROOT` 패턴으로 로드 (경로 규칙은 `docs/conventions/repo-root-path.md` 참조)
 - [ ] 대상 에픽 키 확인
 - [ ] `## 섹션` 수만큼 Task 생성 + 에픽 하위 연결
 - [ ] `### 항목` 수만큼 Sub-task 생성 + Task 하위 연결
