@@ -279,82 +279,125 @@ curl -s -u "$JIRA_AUTH" -X POST \
 
 티켓 타입에 따라 아래 템플릿 중 하나를 선택. 섹션 순서는 유지하되, 해당 없는 항목은 생략 가능.
 
+### ADF 소제목 형식
+
+소제목("배경", "작업 내용", "완료 기준" 등)은 반드시 `heading` 노드(level 2)로 작성. bold 텍스트 사용 금지.
+
+```json
+{"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "소제목"}]}
+```
+
+---
+
 ### 타입 A — 기능 개발 / 개선
 
-```
-목적
-왜 이 기능이 필요한가. 사용자 관점에서 한두 문장으로.
-예) 유저가 키워드를 입력해 상품을 검색할 때 Shop/GetItems 결과를 검색 페이지에 표시한다.
+**섹션 구조:** 배경 → 작업 내용 → 완료 기준 → 참고
 
-상세
-- [ ] 작업 항목 1 (레이어/담당 명시)
-- [ ] 작업 항목 2
-- [ ] 작업 항목 3
+```json
+{
+  "type": "doc", "version": 1,
+  "content": [
+    {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "배경"}]},
+    {"type": "paragraph", "content": [{"type": "text", "text": "왜 이 기능이 필요한가. 사용자 관점에서 한두 문장으로."}]},
 
-참고
-- 컨플루언스: <링크>
-- API 문서: <링크>
-- 디자인(Figma): <링크>
-- PR: <링크>
+    {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "작업 내용"}]},
+    {"type": "taskList", "attrs": {"localId": "task-list"}, "content": [
+      {"type": "taskItem", "attrs": {"localId": "t1", "state": "TODO"}, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "작업 항목 1 (레이어/담당 명시)"}]}]},
+      {"type": "taskItem", "attrs": {"localId": "t2", "state": "TODO"}, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "작업 항목 2"}]}]}
+    ]},
+
+    {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "완료 기준"}]},
+    {"type": "bulletList", "content": [
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "완료 조건 1"}]}]},
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "정적 검증 error 0개"}]}]}
+    ]},
+
+    {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "참고"}]},
+    {"type": "bulletList", "content": [
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "컨플루언스: <링크>"}]}]},
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "디자인(Figma): <링크>"}]}]},
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "PR: <링크>"}]}]}
+    ]}
+  ]
+}
 ```
+
+---
 
 ### 타입 B — 앱/UI 버그 리포트
 
+**섹션 구조:** 테스트 정보 → 케이스 → 참고
+
+```json
+{
+  "type": "doc", "version": 1,
+  "content": [
+    {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "테스트 정보"}]},
+    {"type": "paragraph", "content": [
+      {"type": "text", "text": "버전 : "},
+      {"type": "hardBreak"},
+      {"type": "text", "text": "플랫폼 : (iOS / Android / Web)"}
+    ]},
+
+    {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "케이스"}]},
+    {"type": "paragraph", "content": [{"type": "text", "text": "[사진 및 영상]"}]},
+    {"type": "bulletList", "content": [
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "case1 인 상황에서 발생"}]}]},
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "case2 인 상황에서는 정상 동작함"}]}]}
+    ]},
+
+    {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "참고"}]},
+    {"type": "bulletList", "content": [
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "관련 티켓: <KEY-XX>"}]}]},
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "PR: <링크>"}]}]}
+    ]}
+  ]
+}
 ```
-테스트 정보
-버전 :
-플랫폼 : (iOS / Android / Web)
 
-케이스
-[사진 및 영상]
-
-case1 인 상황에서 발생
-case2 인 상황에서는 정상 동작함
-
-참고
-- 관련 티켓: <KEY-XX>
-- PR: <링크>
-```
+---
 
 ### 타입 C — 인프라 / 운영 이슈
 
+**섹션 구조:** 현상 → 원인 분석 → 조치 내용 → 검증 방법 → 잔여 검토 항목 → 참고
+
+```json
+{
+  "type": "doc", "version": 1,
+  "content": [
+    {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "현상"}]},
+    {"type": "paragraph", "content": [{"type": "text", "text": "언제, 어떤 증상이 발생하는가. 알림 내용, 빈도, 영향 범위 포함."}]},
+
+    {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "원인 분석"}]},
+    {"type": "bulletList", "content": [
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "[HH:MM] 이벤트 A 발생"}]}]},
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "[HH:MM] 이벤트 B → 이벤트 A의 결과"}]}]},
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "결론: 핵심 원인 한 줄 요약"}]}]}
+    ]},
+
+    {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "조치 내용"}]},
+    {"type": "paragraph", "content": [{"type": "text", "text": "변경한 내용과 이유. 명령어·코드·설정값은 코드블록으로."}]},
+
+    {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "검증 방법"}]},
+    {"type": "bulletList", "content": [
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "확인 시점: 예) 익일 새벽 1시 이후"}]}]},
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "확인 방법: 예) GCP Scheduler 콘솔에서 SUCCESS 상태 확인"}]}]}
+    ]},
+
+    {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "참고"}]},
+    {"type": "bulletList", "content": [
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "PR: <링크>"}]}]},
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "관련 티켓: <KEY-XX>"}]}]}
+    ]}
+  ]
+}
 ```
-현상
-언제, 어떤 증상이 발생하는가. 알림 내용, 빈도, 영향 범위 포함.
-예) 매일 새벽 1시 Cloud Scheduler 실패 알림 2건 수신. 운영 체감 이슈는 없었으나 Scheduler 기준 매일 실패 상태.
 
-원인 분석
-로그/코드 분석으로 확인한 근본 원인 체인. 타임라인 형식 권장.
-- [HH:MM] 이벤트 A 발생
-- [HH:MM] 이벤트 B → 이벤트 A의 결과
-- 결론: 핵심 원인 한 줄 요약
-
-조치 내용
-변경한 내용과 이유. 명령어·코드·설정값은 코드블록으로.
-1. 항목명 — 변경 전 → 변경 후
-   이유: 왜 이 값으로 변경했는가.
-   ```
-   실행 명령어 또는 코드
-   ```
-
-검증 방법
-언제, 어떻게 정상 여부를 확인할지.
-- 확인 시점: 예) 익일 새벽 1시 이후
-- 확인 방법: 예) GCP Scheduler 콘솔에서 SUCCESS 상태 확인
-
-잔여 검토 항목 (선택)
-이번 범위 밖이지만 후속 대응이 필요한 항목.
-- 항목 A — 담당/일정 미정
-- 항목 B — 별도 티켓 권장
-
-참고
-- PR: <링크>
-- 관련 로그 쿼리: <링크>
-- 관련 티켓: <KEY-XX>
-```
+---
 
 ### 공통 규칙
 
+- **소제목은 반드시 `heading` 노드(level 2)** — bold 텍스트로 대체 금지
 - **참고 섹션은 항상 마지막.** PR, 문서, 관련 티켓 링크를 모은다.
 - **PR이 생성된 경우** description 참고 섹션에 링크 추가 + Jira 원격 링크(`remotelink`) API로도 연결:
   ```bash
