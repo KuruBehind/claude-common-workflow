@@ -27,7 +27,14 @@ description: "Jira 티켓 생성 절차 — tickets.md를 Jira Task/Sub-task로 
 
 > 프로젝트별 추가 항목은 각 워크스페이스 `skills/jira-tickets/SKILL.md`에서 오버라이드.
 
-### 미흡 시 처리
+### 미흡 시 처리 — 판단 기준
+
+| 상황 | 처리 |
+|------|------|
+| 티켓 내용으로 **명확히 추론 가능**한 경우 | 에이전트가 직접 보완 → 사용자 검토 요청 |
+| **비즈니스 판단**이 필요한 경우 (범위·우선순위 결정 등) | 작성자 멘션 + 코멘트로 보완 요청 |
+
+**직접 보완 시 — description 업데이트:**
 
 ```bash
 REPO_ROOT=$(git rev-parse --git-common-dir | xargs dirname)
@@ -35,7 +42,28 @@ source "$REPO_ROOT/../claude-common-workflow/.env.local"
 export JIRA_AUTH="$JIRA_EMAIL:$JIRA_API_TOKEN"
 export JIRA_BASE="$JIRA_URL/rest/api/3"
 
-# 코멘트 작성 + 작성자 멘션
+cat > /tmp/description.json << 'EOF'
+{
+  "fields": {
+    "description": {
+      "type": "doc", "version": 1,
+      "content": [
+        {"type": "paragraph", "content": [{"type": "text", "text": "<보완된 내용>"}]}
+      ]
+    }
+  }
+}
+EOF
+curl -s -u "$JIRA_AUTH" -X PUT \
+  -H "Content-Type: application/json; charset=utf-8" \
+  "$JIRA_BASE/issue/<TICKET-KEY>" --data-binary @/tmp/description.json
+```
+
+보완 후 사용자에게 검토 요청: "description에 AC를 추가했습니다. 확인 후 진행할까요?"
+
+**작성자 멘션 코멘트 시:**
+
+```bash
 cat > /tmp/review-comment.json << 'EOF'
 {
   "body": {
@@ -54,8 +82,6 @@ curl -s -u "$JIRA_AUTH" -X POST \
   -H "Content-Type: application/json; charset=utf-8" \
   "$JIRA_BASE/issue/<TICKET-KEY>/comment" --data-binary @/tmp/review-comment.json
 ```
-
-사용자에게 "보완 후 진행할까요?" 확인. override 선택 시 미흡 상태로도 진행 가능.
 
 ---
 
