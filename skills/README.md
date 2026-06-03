@@ -25,12 +25,15 @@ Desktop/dev/
 
 | 스킬 | step | 설명 |
 |------|------|------|
-| `workflow/` | 항상 활성 | step 인덱스, 진입 조건, 예외 경로 |
-| `brainstorming/` | Step 0a | 설계 수립 — 코드 작성 전 hard gate |
-| `writing-plans/` | Step 0b | 구현 플랜 작성, TDD 기반 |
-| `jira-tickets/` | Step 0c | Jira 티켓 생성 절차 (템플릿) |
-| `subagent-dev/` | Step 2 | 태스크별 fresh 서브에이전트 실행 |
-| `writing-policy/` | Step 7 | 기획 정책서(7-a) + 개발 독스(7-b) |
+| `workflow/` | 항상 활성 | 티켓 주도 Step 0~8, 진입 조건, 예외 경로 |
+| `jira-tickets/` | Step 0~8 | 티켓 품질 리뷰, context.md 생성, 티켓 CRUD |
+| `brainstorming/` | Step 2 | 설계 수립 — 코드 작성 전 hard gate |
+| `writing-plans/` | Step 3 | 구현 플랜 작성, TDD 기반 |
+| `subagent-dev/` | Step 4 | 태스크별 fresh 서브에이전트 실행 |
+| `code-conventions/` | Step 5 | 통합 코드 리뷰 기준 — DRY, 단일책임, 네이밍 |
+| `writing-policy/` | Step 8 | 기획 정책서(7-a) + 개발 독스(7-b) |
+| `communication/` | 항상 활성 | 커뮤니케이션 원칙 — 아부 금지, 자율 해결, 직접 실행 |
+| `gcloud/` | 필요시 | GCP 로그 분석, Cloud Functions/Scheduler 관리 |
 
 ## 오버라이드 방법
 
