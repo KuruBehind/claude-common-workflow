@@ -279,13 +279,42 @@ curl -s -u "$JIRA_AUTH" -X POST \
 
 티켓 타입에 따라 아래 템플릿 중 하나를 선택. 섹션 순서는 유지하되, 해당 없는 항목은 생략 가능.
 
-### ADF 소제목 형식
+### ADF 형식 규칙
 
-소제목("배경", "작업 내용", "완료 기준" 등)은 반드시 `heading` 노드(level 2)로 작성. bold 텍스트 사용 금지.
+- **소제목** — `heading` 노드(level 2). bold 텍스트 사용 금지.
+- **완료 기준 / 작업 내용** — `bulletList` + `[ ]` / `[x]` 텍스트 표기.
+  - Jira Cloud REST API는 `taskList` 노드를 description에서 지원하지 않음 (프로젝트 설정에 따라 다름).
+  - `[ ]` → 미완료, `[x]` → 완료로 시각적 표기.
 
 ```json
 {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "소제목"}]}
+{"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "[ ] 미완료 항목"}]}]}
+{"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "[x] 완료된 항목"}]}]}
 ```
+
+### 진행 중 AC 업데이트 패턴
+
+AC 항목 달성 시 두 가지 방식으로 기록:
+
+1. **description 업데이트** — `[ ]` → `[x]` 로 교체 후 전체 PUT (Jira는 부분 업데이트 미지원)
+2. **코멘트 추가** — 달성 내용과 시점을 코멘트로 기록 → 히스토리 보존
+
+```bash
+# 1. description의 [ ] → [x] 교체 후 PUT
+curl -s -u "$JIRA_AUTH" -X PUT \
+  -H "Content-Type: application/json; charset=utf-8" \
+  "$JIRA_BASE/issue/<TICKET-KEY>" --data-binary @/tmp/description-updated.json
+
+# 2. 달성 코멘트 추가
+cat > /tmp/progress.json << 'EOF'
+{"body": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "✅ <AC 항목> 완료"}]}]}}
+EOF
+curl -s -u "$JIRA_AUTH" -X POST \
+  -H "Content-Type: application/json; charset=utf-8" \
+  "$JIRA_BASE/issue/<TICKET-KEY>/comment" --data-binary @/tmp/progress.json
+```
+
+> 업데이트 시점: 각 AC 항목 검증 완료 직후. Step 4~5 루프에서 자연스럽게 체크.
 
 ---
 
@@ -301,15 +330,15 @@ curl -s -u "$JIRA_AUTH" -X POST \
     {"type": "paragraph", "content": [{"type": "text", "text": "왜 이 기능이 필요한가. 사용자 관점에서 한두 문장으로."}]},
 
     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "작업 내용"}]},
-    {"type": "taskList", "attrs": {"localId": "task-list"}, "content": [
-      {"type": "taskItem", "attrs": {"localId": "t1", "state": "TODO"}, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "작업 항목 1 (레이어/담당 명시)"}]}]},
-      {"type": "taskItem", "attrs": {"localId": "t2", "state": "TODO"}, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "작업 항목 2"}]}]}
+    {"type": "taskList", "attrs": {"localId": "work-list"}, "content": [
+      {"type": "taskItem", "attrs": {"localId": "w1", "state": "TODO"}, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "작업 항목 1 (레이어/담당 명시)"}]}]},
+      {"type": "taskItem", "attrs": {"localId": "w2", "state": "TODO"}, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "작업 항목 2"}]}]}
     ]},
 
     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "완료 기준"}]},
-    {"type": "bulletList", "content": [
-      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "완료 조건 1"}]}]},
-      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "정적 검증 error 0개"}]}]}
+    {"type": "taskList", "attrs": {"localId": "ac-list"}, "content": [
+      {"type": "taskItem", "attrs": {"localId": "ac1", "state": "TODO"}, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "완료 조건 1"}]}]},
+      {"type": "taskItem", "attrs": {"localId": "ac2", "state": "TODO"}, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "정적 검증 error 0개"}]}]}
     ]},
 
     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "참고"}]},
