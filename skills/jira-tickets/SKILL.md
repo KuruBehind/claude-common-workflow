@@ -454,12 +454,12 @@ curl -s -u "$JIRA_AUTH" -X PUT \
 
 ```bash
 REPO_ROOT=$(git rev-parse --git-common-dir | xargs dirname)
-# 중첩 레포 대응: 워크스페이스 루트에서 claude-common-workflow 탐색
-WORKSPACE_ROOT=$(cd "$REPO_ROOT/../.." && pwd)
+INDEX_REPO=$(cd "$REPO_ROOT/.." && pwd)
+WORKSPACE_ROOT=$(cd "$INDEX_REPO/.." && pwd)
 if [ -f "$WORKSPACE_ROOT/claude-common-workflow/.env.local" ]; then
-  source "$WORKSPACE_ROOT/claude-common-workflow/.env.local"
+  source "$WORKSPACE_ROOT/claude-common-workflow/.env.local"   # 중첩 구조
 else
-  source "$REPO_ROOT/../claude-common-workflow/.env.local"
+  source "$INDEX_REPO/claude-common-workflow/.env.local"       # 플랫 구조
 fi
 export JIRA_AUTH="$JIRA_EMAIL:$JIRA_API_TOKEN"
 export JIRA_BASE="$JIRA_URL/rest/api/3"
