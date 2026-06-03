@@ -21,7 +21,7 @@ description: "개발 워크플로우 — 항상 활성. 티켓 주도 Step 0~8, 
 
 ### 경로 규칙
 
-- 워크트리는 **서브 레포 내부 `worktrees/`** 에 생성
+- 워크트리는 **인덱스 레포 내부 `worktrees/`** 에 생성 — 서브 레포 내부에 생성 금지 (운영 레포 오염 방지)
 - 크로스 레포 경로는 `REPO_ROOT` 패턴으로 동적 계산 — 하드코딩 금지
 - `dev` / `main` 직접 작업 절대 금지
 
@@ -95,23 +95,28 @@ lsof -i :{port}                          # macOS — 포트는 서브 레포 CLA
 netstat -ano | findstr :{port}           # Windows
 kill -9 {PID} / taskkill /PID {PID} /F
 
-# 3. 워크트리 생성 — 서브 레포 내부 worktrees/ 에 생성
+# 3. 인덱스 레포의 worktrees/ 에 생성
+#    인덱스 레포 = 서브 레포의 부모 디렉토리 (예: kuru/)
+INDEX_REPO=$(cd "$REPO_ROOT/.." && pwd)   # 서브 레포의 부모 = 인덱스 레포
+mkdir -p "$INDEX_REPO/worktrees"
+
 cd "$REPO_ROOT"
 git fetch origin
 git pull
-git worktree add worktrees/{TICKET-ID}-{feature-en} -b feat/{TICKET-ID}-{feature-en} origin/dev
-cd worktrees/{TICKET-ID}-{feature-en}
+git worktree add "$INDEX_REPO/worktrees/{TICKET-ID}-{feature-en}" \
+  -b feat/{TICKET-ID}-{feature-en} origin/dev
+cd "$INDEX_REPO/worktrees/{TICKET-ID}-{feature-en}"
 # 의존성 설치: 각 서브 레포의 skills/workflow-env/SKILL.md 참조
 
 # 4. context.md 생성 — 워크트리 루트에 작성 (수동 편집 금지)
 #    REQUIRED SKILL: jira-tickets → "context.md 생성" 섹션 실행
 ```
 
-> `worktrees/` 디렉토리는 서브 레포 `.gitignore`에 추가 필요.
+> `worktrees/` 디렉토리는 **인덱스 레포** `.gitignore`에 추가 필요 (서브 레포 아님).
 
 **네이밍 예시:**
-- 디렉토리: `kuru-mart/worktrees/KURU-123-cart-redesign/`
-- 브랜치: `feat/KURU-123-cart-redesign`
+- 디렉토리: `kuru/worktrees/KM-175-image-tile/`  (인덱스 레포 기준)
+- 브랜치: `feat/KM-175-image-tile`
 
 ---
 
@@ -225,7 +230,8 @@ source "$REPO_ROOT/../claude-common-workflow/.env.local"
 
 ```bash
 kill -9 {PID} / taskkill /PID {PID} /F
-git worktree remove worktrees/{TICKET-ID}-{feature-en}
+INDEX_REPO=$(cd "$(git rev-parse --git-common-dir | xargs dirname)/.." && pwd)
+git worktree remove "$INDEX_REPO/worktrees/{TICKET-ID}-{feature-en}"
 ```
 
 나중에 하겠다고 하면 그대로 두고 종료.
@@ -246,14 +252,16 @@ git worktree remove worktrees/{TICKET-ID}-{feature-en}
 
 ```bash
 REPO_ROOT=$(git rev-parse --git-common-dir | xargs dirname)
-gh pr view {PR_URL}                                        # 브랜치명·상태 확인
-git worktree list                                          # 기존 워크트리 확인
-git worktree remove worktrees/{TICKET-ID}-{feature-en}    # 있으면 제거
+INDEX_REPO=$(cd "$REPO_ROOT/.." && pwd)
+
+gh pr view {PR_URL}                                                    # 브랜치명·상태 확인
+git worktree list                                                       # 기존 워크트리 확인
+git worktree remove "$INDEX_REPO/worktrees/{TICKET-ID}-{feature-en}"  # 있으면 제거
 
 cd "$REPO_ROOT"
 git fetch origin feat/{TICKET-ID}-{feature-en}
-git worktree add worktrees/{TICKET-ID}-{feature-en} origin/feat/{TICKET-ID}-{feature-en}
-cd worktrees/{TICKET-ID}-{feature-en} && git pull
+git worktree add "$INDEX_REPO/worktrees/{TICKET-ID}-{feature-en}" origin/feat/{TICKET-ID}-{feature-en}
+cd "$INDEX_REPO/worktrees/{TICKET-ID}-{feature-en}" && git pull
 # 의존성 재설치 (skills/workflow-env/SKILL.md 참조)
 
 # context.md 재생성 — jira-tickets 스킬 → "context.md 생성" 실행
