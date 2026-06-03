@@ -282,8 +282,8 @@ curl -s -u "$JIRA_AUTH" -X POST \
 ### ADF 형식 규칙
 
 - **소제목** — `heading` 노드(level 2) + `strong` mark. `localId` 필수.
-- **완료 기준 (AC)** — `bulletList` 사용. 정적 정의 ("완료란 무엇인가"). 한 번 작성 후 변경 없음.
-- **진행 상황** — Smart Checklist 플러그인으로 별도 관리. 구현 중 체크해가는 동적 추적용.
+- **완료 기준 (AC)** — `taskList` 사용. 구현 완료 시 `state: "DONE"`으로 업데이트 → 진행 상황 실시간 반영.
+- **Smart Checklist** — API로 다중 항목 관리 불가(체크 상태는 UI에서만 변경 가능). 초기 항목 텍스트 세팅 용도로만 활용.
 
 > taskList / taskItem은 description에서도 사용 가능하지만, 진행 상황 추적은 Smart Checklist로 분리하는 것이 역할이 명확함.
 
@@ -340,9 +340,9 @@ curl -s -u "$JIRA_AUTH" -X PUT \
     ]},
 
     {"type": "heading", "attrs": {"level": 2, "localId": "h3"}, "content": [{"type": "text", "text": "완료 기준", "marks": [{"type": "strong"}]}]},
-    {"type": "bulletList", "content": [
-      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "완료 조건 1"}]}]},
-      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "정적 검증 error 0개"}]}]}
+    {"type": "taskList", "attrs": {"localId": "<uuid>"}, "content": [
+      {"type": "taskItem", "attrs": {"localId": "<uuid>", "state": "TODO"}, "content": [{"type": "text", "text": "완료 조건 1"}]},
+      {"type": "taskItem", "attrs": {"localId": "<uuid>", "state": "TODO"}, "content": [{"type": "text", "text": "정적 검증 error 0개"}]}
     ]},
 
     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "참고"}]},
