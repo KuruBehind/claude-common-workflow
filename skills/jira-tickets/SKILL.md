@@ -282,54 +282,39 @@ curl -s -u "$JIRA_AUTH" -X POST \
 ### ADF 형식 규칙
 
 - **소제목** — `heading` 노드(level 2) + `strong` mark. `localId` 필수.
-- **완료 기준 / 작업 내용** — `taskList` / `taskItem` 노드 사용.
-  - `taskItem.content`는 `text` 노드 직접 담기. `paragraph`로 감싸면 INVALID_INPUT.
-  - `state`: `"TODO"` (미완료) / `"DONE"` (완료)
-  - `localId`: UUID 형식 필수 (예: `"f31ce62f-9c59-4837-b8b9-22a96952a578"`)
+- **완료 기준 (AC)** — `bulletList` 사용. 정적 정의 ("완료란 무엇인가"). 한 번 작성 후 변경 없음.
+- **진행 상황** — Smart Checklist 플러그인으로 별도 관리. 구현 중 체크해가는 동적 추적용.
+
+> taskList / taskItem은 description에서도 사용 가능하지만, 진행 상황 추적은 Smart Checklist로 분리하는 것이 역할이 명확함.
 
 ```json
-{"type": "taskList", "attrs": {"localId": "<uuid>"}, "content": [
-  {"type": "taskItem", "attrs": {"localId": "<uuid>", "state": "TODO"},
-   "content": [{"type": "text", "text": "미완료 항목"}]},
-  {"type": "taskItem", "attrs": {"localId": "<uuid>", "state": "DONE"},
-   "content": [{"type": "text", "text": "완료된 항목"}]}
+// 완료 기준 — bulletList (정적)
+{"type": "heading", "attrs": {"level": 2, "localId": "<uuid>"}, "content": [{"type": "text", "text": "완료 기준", "marks": [{"type": "strong"}]}]},
+{"type": "bulletList", "content": [
+  {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "AC 항목 1"}]}]}
 ]}
 ```
 
-### 진행 중 AC 업데이트 패턴
+### 진행 상황 관리 — Smart Checklist
 
-**Smart Checklist 플러그인이 설치된 경우 (권장):**
-
-issue properties API로 관리 — plain text 형식, description과 독립적, 부분 업데이트 가능.
+구현 시작 시 Smart Checklist 초기 생성, AC 항목과 동일하게 세팅.
+각 항목 달성 시 `- [ ]` → `- [x]` 로 PUT 업데이트.
 
 ```bash
-# GET — 현재 체크리스트 조회
+# GET — 현재 진행 상황 조회
 curl -s -u "$JIRA_AUTH" \
   "$JIRA_BASE/issue/<TICKET-KEY>/properties/com.railsware.SmartChecklist.checklist"
 
-# PUT — 항목 체크 상태 업데이트 (- [ ] 미완료 / - [x] 완료)
+# PUT — 초기 생성 또는 항목 체크 업데이트
 curl -s -u "$JIRA_AUTH" -X PUT \
   -H "Content-Type: application/json; charset=utf-8" \
   "$JIRA_BASE/issue/<TICKET-KEY>/properties/com.railsware.SmartChecklist.checklist" \
-  -d '{"value":"- [x] 완료된 항목\n- [ ] 미완료 항목\n"}'
+  -d '{"value":"- [x] 완료된 항목\n- [ ] 진행 중 항목\n- [ ] 미시작 항목\n"}'
 ```
 
-**Smart Checklist 미설치 시:**
+> Smart Checklist 미설치 시: 코멘트로 진행 상황 기록 (`✅ <항목> 완료`).
 
-1. description의 `taskItem` `state: "TODO"` → `"DONE"` 변경 후 전체 PUT
-2. 달성 코멘트 추가 (히스토리 보존)
-
-```bash
-# 코멘트로 진행 상황 기록
-cat > /tmp/progress.json << 'EOF'
-{"body": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "✅ <AC 항목> 완료"}]}]}}
-EOF
-curl -s -u "$JIRA_AUTH" -X POST \
-  -H "Content-Type: application/json; charset=utf-8" \
-  "$JIRA_BASE/issue/<TICKET-KEY>/comment" --data-binary @/tmp/progress.json
-```
-
-> 업데이트 시점: 각 AC 항목 검증 완료 직후. Step 4~5 루프에서 자연스럽게 체크.
+> 업데이트 시점: 각 항목 검증 완료 직후. Step 4~5 루프에서 자연스럽게 체크.
 
 ---
 
@@ -351,9 +336,9 @@ curl -s -u "$JIRA_AUTH" -X POST \
     ]},
 
     {"type": "heading", "attrs": {"level": 2, "localId": "h3"}, "content": [{"type": "text", "text": "완료 기준", "marks": [{"type": "strong"}]}]},
-    {"type": "taskList", "attrs": {"localId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeee01"}, "content": [
-      {"type": "taskItem", "attrs": {"localId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeee02", "state": "TODO"}, "content": [{"type": "text", "text": "완료 조건 1"}]},
-      {"type": "taskItem", "attrs": {"localId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeee03", "state": "TODO"}, "content": [{"type": "text", "text": "정적 검증 error 0개"}]}
+    {"type": "bulletList", "content": [
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "완료 조건 1"}]}]},
+      {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "정적 검증 error 0개"}]}]}
     ]},
 
     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "참고"}]},
