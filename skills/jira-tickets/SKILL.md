@@ -18,7 +18,7 @@ description: "Jira 티켓 생성 절차 — tickets.md를 Jira Task/Sub-task로 
 
 ## 티켓 품질 리뷰 (Step 0 — 게이트)
 
-티켓 URL 또는 키를 받으면 아래 체크리스트를 실행. 미흡 항목은 Jira 코멘트 + 작성자 멘션으로 보완 요청.
+티켓 URL 또는 키를 받으면 아래 체크리스트를 실행.
 
 ### 공통 체크리스트
 
@@ -41,10 +41,12 @@ description: "Jira 티켓 생성 절차 — tickets.md를 Jira Task/Sub-task로 
 
 | 상황 | 처리 |
 |------|------|
-| 티켓 내용으로 **명확히 추론 가능**한 경우 | 에이전트가 직접 보완 → 사용자 검토 요청 |
-| **비즈니스 판단**이 필요한 경우 (범위·우선순위 결정 등) | 작성자 멘션 + 코멘트로 보완 요청 |
+| 티켓 내용으로 **명확히 추론 가능**한 경우 (AC 누락, 담당자 없음 등) | **티켓 직접 수정** (description PUT / 필드 업데이트) |
+| **비즈니스 판단**이 필요한 경우 (범위·우선순위·기한 결정 등) | **작성자 멘션 코멘트**로 수정 요청 — 티켓 본문 손대지 않음 |
 
-**직접 보완 시 — description 업데이트:**
+**원칙:** 코멘트는 "수정 요청"용. 에이전트가 직접 판단 가능한 내용은 티켓에 바로 반영하고 사용자에게 검토 요청.
+
+**직접 수정 시 — description 업데이트:**
 
 ```bash
 REPO_ROOT=$(git rev-parse --git-common-dir | xargs dirname)
@@ -69,9 +71,9 @@ curl -s -u "$JIRA_AUTH" -X PUT \
   "$JIRA_BASE/issue/<TICKET-KEY>" --data-binary @/tmp/description.json
 ```
 
-보완 후 사용자에게 검토 요청: "description에 AC를 추가했습니다. 확인 후 진행할까요?"
+수정 후 사용자에게 검토 요청: "description에 AC를 추가했습니다. 확인 후 진행할까요?"
 
-**작성자 멘션 코멘트 시:**
+**비즈니스 판단이 필요한 항목 — 작성자 멘션 코멘트:**
 
 ```bash
 cat > /tmp/review-comment.json << 'EOF'
@@ -82,7 +84,7 @@ cat > /tmp/review-comment.json << 'EOF'
       "type": "paragraph",
       "content": [
         {"type": "mention", "attrs": {"id": "<작성자-accountId>"}},
-        {"type": "text", "text": " 아래 항목 보완 부탁드립니다:\n- <미흡 항목 목록>"}
+        {"type": "text", "text": " 아래 항목 확인 부탁드립니다:\n- <판단이 필요한 항목 목록>"}
       ]
     }]
   }
