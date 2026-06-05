@@ -134,6 +134,12 @@ cd "$INDEX_REPO/worktrees/{TICKET-ID}-{sub-repo-name}-{feature-en}"
 
 **REQUIRED SKILL:** `brainstorming`
 
+> **중요:** 브레인스토밍은 사용자와 함께 진행하는 인터랙티브 프로세스.
+> - 질문은 **한 번에 하나씩** — 다음 질문은 사용자 답변을 받은 후에만
+> - 설계 각 섹션마다 사용자 승인을 받은 후 다음 섹션으로 진행
+> - 사용자 승인 전 구현·플랜 작성 금지 (brainstorming 스킬 HARD-GATE 준수)
+> - 에이전트 혼자 설계를 완성해서 제시하는 방식 금지
+
 - 브레인스토밍 과정은 로컬 MD에만 기록 (임시, Jira에 올리지 않음)
 - 확정된 결정만 Jira description 업데이트 또는 코멘트로 기록 (변경 이유 한 줄 포함)
 - context.md `## 확정 결정` 섹션 업데이트
