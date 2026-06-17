@@ -34,6 +34,7 @@ Desktop/dev/
 | `writing-policy/` | Step 8 | 기획 정책서(7-a) + 개발 독스(7-b) |
 | `communication/` | 항상 활성 | 커뮤니케이션 원칙 — 아부 금지, 자율 해결, 직접 실행 |
 | `gcloud/` | 필요시 | GCP 로그 분석, Cloud Functions/Scheduler 관리 |
+| `ralph-loop/` | Step 4 (선택) | 정적 검증·빌드 오류 자동 반복 수정 루프 |
 
 ## 오버라이드 방법
 

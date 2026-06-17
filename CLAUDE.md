@@ -25,6 +25,7 @@
 @skills/gcloud/SKILL.md
 @skills/communication/SKILL.md
 @skills/code-conventions/SKILL.md
+@skills/ralph-loop/SKILL.md
 
 ---
 
