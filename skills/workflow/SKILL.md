@@ -103,7 +103,7 @@ mkdir -p "$INDEX_REPO/worktrees"
 
 cd "$REPO_ROOT"
 git fetch origin
-git pull
+git pull   # dev 최신화 필수 — 워크트리는 항상 최신 origin/dev 기준으로 생성
 git worktree add "$INDEX_REPO/worktrees/{TICKET-ID}-{sub-repo-name}-{feature-en}" \
   -b feat/{TICKET-ID}-{sub-repo-name}-{feature-en} origin/dev
 cd "$INDEX_REPO/worktrees/{TICKET-ID}-{sub-repo-name}-{feature-en}"

@@ -22,6 +22,9 @@ Every project goes through this process. A todo list, a single-function utility,
 You MUST create a task for each of these items and complete them in order:
 
 1. **Explore project context** — check files, docs, recent commits
+   - 기존 코드·API·패턴 조사는 반드시 **`origin/dev` 최신 기준**으로 확인 (`git fetch origin` 선행)
+   - 현재 체크아웃된 브랜치 기준으로 조사하면 dev에 이미 존재하는 코드를 놓칠 수 있음
+   - 기존 패턴(라우트, 네이밍, 파일 구조 등)을 먼저 파악한 뒤 신규 코드 설계 시작
 2. **Offer visual companion** (if topic will involve visual questions) — this is its own message, not combined with a clarifying question. See the Visual Companion section below.
 3. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
 4. **Propose 2-3 approaches** — with trade-offs and your recommendation
