@@ -17,7 +17,7 @@ Firebase CLI는 `--only functions`(이름 미지정)로 배포하면 "codebase�
 | `kuru_mart_functions` | notifyChat, notifyChannelChat, kuruchatsend, ShopCompanyInfoUpdate, CompanyUpdatePrice, furigana, makePriceHistory | default |
 | `kuru_cf_check_reservation_email` | checkReservation | default |
 | `kuru_mobile` (웹 SEO) | productSeo, sitemap | default |
-| (기타 레거시) | kuruapi, kuruai, customSetBot, gmoPaymentApi, v2onReceipt*, onInstantOrderSet, onUnitificationImageUploaded, createUser, downloadOrderList, onGmoCasCustomerAuth | default |
+| `kuru_functions_legacy` | customSetBot, createUser, downloadOrderList, onGmoCasCustomerAuth, onInstantOrderSet, v2onReceiptCreated/Deleted, kuruapi, kuruai, gmoPaymentApi | default |
 
 **전부 codebase `default`를 공유** → 어느 레포든 이름 없는 functions 배포 한 방이면 나머지 전멸.
 
@@ -67,3 +67,10 @@ gcloud logging read 'protoPayload.methodName:"DeleteFunction"' \
   (`"codebase": "aggregation"` / `"mart"` / `"reservation"` / `"mobile-web"`).
   분리하면 삭제 영향 범위가 자기 codebase로 한정된다.
   ⚠️ 전 레포 동시 전환 필요(한 레포만 default에 남으면 그 레포가 여전히 전체를 지배).
+
+## 부가 안전장치 (2026-07-08 추가)
+
+- **함수 삭제 실시간 알림**: DeleteFunction 감사로그 → Slack 웹훅("KURU 함수 삭제 감시") — 삭제 즉시 채널 알림.
+- **레포 설명 컨벤션**: 함수 레포 description = `[Cloud Functions] <역할> | deploys: 함수목록 | project: <프로젝트>` (복구 맵 겸용). 신규 함수 레포명은 `kuru_functions_<도메인>` 패턴.
+- **레거시 레포화 완료**: 소스 없던 11개 함수 → kuru_functions_legacy (CI 배포 검증 완료, KBO-344).
+- **알려진 부채**: kuru_functions_legacy/kuruai 소스에 하드코딩 크리덴셜(OpenAI·SA키·Supabase JWT) — 배포본 그대로 복원. 추후 로테이션+Secret 관리 이전 필요.
