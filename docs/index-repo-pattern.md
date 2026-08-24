@@ -246,8 +246,20 @@ yamaharu/yamaharu-web/CLAUDE.md  ← 자동 로드 (레포 전용 규칙)
 
 즉, `yamaharu-web/` 세션에서도 상위 `yamaharu/CLAUDE.md`가 항상 적용됩니다.
 
-스킬 파일은 CLAUDE.md에 경로를 명시하면 필요 시 로드됩니다.  
-`../claude-common-workflow/skills/`의 스킬도 동일하게 상대경로로 참조 가능합니다.
+### 스킬 로딩 방식 — `@import` vs `.claude/skills/` (중요, 혼동 주의)
+
+> ⚠️ 2026-08-24 정정: 과거 버전의 이 문서는 "CLAUDE.md에 경로를 명시하면 필요 시 로드된다"고 설명했으나 **사실이 아닙니다.** 실제 동작은 로딩 방식에 따라 완전히 다릅니다.
+
+| 방식 | 로딩 시점 | 적용 범위 |
+|------|---------|---------|
+| CLAUDE.md `@path` (`@import`) | **항상 전체 강제 로드** — 작업 내용과 무관하게 매 세션 로드됨. progressive disclosure 아님 | 어떤 경로든 상대경로로 참조 가능 (예: `@../claude-common-workflow/CLAUDE.md`) |
+| `.claude/skills/<name>/SKILL.md` (Skill 자동 탐색) | frontmatter `description`이 현재 작업과 매칭될 때만 **조건부 로드**. 호출 식별자는 **디렉토리명**(frontmatter `name` 필드 아님) | **현재 프로젝트 루트 밑에 물리적으로 있어야만** 인식됨. 다른 레포(`claude-common-workflow` 등)에 있는 스킬은 자동으로 안 잡힘 |
+
+**실무 판단 기준:**
+- 거의 모든 세션에 필요한 것(실행 환경 PATH, 항상 지켜야 할 페르소나 규칙 등) → CLAUDE.md `@import`로 상시 로드
+- 특정 상황에만 필요한 것(특정 도메인 작업, 특정 기술스택 작업 등) → 그 레포 자체 `.claude/skills/`에 두어 조건부 로드
+
+**`../claude-common-workflow/skills/`처럼 다른 레포에 있는 스킬을 조건부로 쓰고 싶다면?** 공식적으로는 `claude --add-dir ../claude-common-workflow` 플래그(또는 세션 중 `/add-dir` 명령)로만 가능합니다. 이건 세션마다 개인이 직접 켜야 하는 로컬 실행 옵션이라 팀 전체에 자동 적용되지 않습니다 — `.claude/settings.json`에 이를 영구 설정하는 공식 키는 없습니다. 그래서 여러 인덱스 레포가 공유하는 `claude-common-workflow`의 스킬은 현재 구조상 `@import`(상시 강제 로드)가 사실상 유일하게 팀 전체에 안전하게 보장되는 방식입니다 — 비효율적이지만 의도적인 트레이드오프로 이해하고 사용할 것.
 
 ---
 
