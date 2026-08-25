@@ -36,6 +36,17 @@ Desktop/dev/
 | `gcloud/` | 필요시 | GCP 로그 분석, Cloud Functions/Scheduler 관리 |
 | `ralph-loop/` | Step 4 (선택) | 정적 검증·빌드 오류 자동 반복 수정 루프 |
 
+### opt-in (CLAUDE.md `@import` 카탈로그에 미등록 — 상시 로드 아님)
+
+버그 디버깅·git 훅처럼 특정 상황에서만 필요한 스킬. 공유 레포 특성상 조건부 자동 로드가 안 되므로,
+필요할 때 `claude --add-dir ../claude-common-workflow` 세션에서 트리거하거나 수동으로 참조한다.
+(왜 상시 등록 안 하는지: [docs/index-repo-pattern.md](../docs/index-repo-pattern.md) 7번 섹션 참조)
+
+| 스킬 | 설명 |
+|------|------|
+| `diagnosing-bugs/` | 어려운 버그·성능 회귀 진단 6단계 절차 (원문 영어 유지, [mattpocock/skills](https://github.com/mattpocock/skills) 이식) |
+| `git-guardrails/` | `git reset --hard`/`clean -f`/`branch -D` 등 되돌릴 수 없는 명령어를 훅으로 하드블록 (프로젝트별 opt-in 설치, [mattpocock/skills](https://github.com/mattpocock/skills)에서 push 제외하고 축소 이식) |
+
 ## 오버라이드 방법
 
 공통 스킬에서 `<!-- 플레이스홀더 -->` 처리된 항목은 워크스페이스의 동명 파일로 오버라이드합니다.
