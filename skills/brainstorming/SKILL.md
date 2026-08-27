@@ -85,6 +85,7 @@ digraph brainstorming {
 - Propose 2-3 different approaches with trade-offs
 - Present options conversationally with your recommendation and reasoning
 - Lead with your recommended option and explain why
+- If the design touches DB reads/queries, schedulers or always-on infra, or paid external APIs, run the `cost-proportionality-review` skill before finalizing — check whether the cost structure is proportional to actual usage purpose/frequency, not just "does it work"
 
 **Presenting the design:**
 

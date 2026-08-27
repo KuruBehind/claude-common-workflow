@@ -46,6 +46,7 @@ Desktop/dev/
 |------|------|
 | `diagnosing-bugs/` | 어려운 버그·성능 회귀 진단 6단계 절차 (원문 영어 유지, [mattpocock/skills](https://github.com/mattpocock/skills) 이식) |
 | `git-guardrails/` | `git reset --hard`/`clean -f`/`branch -D` 등 되돌릴 수 없는 명령어를 훅으로 하드블록 (프로젝트별 opt-in 설치, [mattpocock/skills](https://github.com/mattpocock/skills)에서 push 제외하고 축소 이식) |
+| `cost-proportionality-review/` | 새 API·DB 쿼리·스케줄러/인프라·외부 유료 API 설계 시, 비용 구조가 실사용 목적·빈도에 비례하는지 점검 (kuru/sabakeru 실사고 근거). `brainstorming` 체크리스트에서 참조됨 |
 
 ## 오버라이드 방법
 
